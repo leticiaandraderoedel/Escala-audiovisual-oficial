@@ -1,0 +1,179 @@
+<script>
+
+let modoEditor = true;
+let data = new Date();
+
+function formatarData(d){
+  return d.getFullYear() + "-" +
+  String(d.getMonth()+1).padStart(2,"0") + "-" +
+  String(d.getDate()).padStart(2,"0");
+}
+
+let sistema = JSON.parse(localStorage.getItem("leSistema")) || {
+  dias:{}
+};
+
+function pegarSalasDia(){
+  const key = formatarData(data);
+
+  if(!sistema.dias[key]){
+    sistema.dias[key] = [
+      {nome:"A1",evento:"Evento teste",horario:"07:00"}
+    ];
+  }
+
+  return sistema.dias[key];
+}
+
+function salvar(){
+  localStorage.setItem("leSistema",JSON.stringify(sistema));
+}
+
+function toggleTheme(){
+  document.body.classList.toggle("dark");
+}
+
+function toggleModo(){
+  modoEditor = !modoEditor;
+  alert(modoEditor ? "Modo Editor ✏️" : "Modo Visualizador 👀");
+  render();
+}
+
+function mudarDia(valor){
+  data.setDate(data.getDate() + valor);
+  render();
+}
+
+function irHoje(){
+  data = new Date();
+  render();
+}
+
+function render(){
+
+  const salas = pegarSalasDia();
+
+  const app = document.getElementById("app");
+
+  app.innerHTML = `
+  
+    <div style="
+      display:flex;
+      gap:10px;
+      align-items:center;
+      margin-bottom:20px;
+      flex-wrap:wrap;
+    ">
+
+      <button onclick="mudarDia(-1)">⬅</button>
+
+      <h3 style="margin:0;">
+        ${data.toLocaleDateString("pt-BR")}
+      </h3>
+
+      <button onclick="mudarDia(1)">➡</button>
+
+      <button onclick="irHoje()">
+        📅 Hoje
+      </button>
+
+    </div>
+
+    ${salas.map((s,i)=>`
+      <div class="card">
+
+        <b>${s.nome}</b><br>
+
+        ${s.evento || "Sem evento"}<br>
+
+        ⏰ ${s.horario || "--:--"}
+
+        ${
+          modoEditor
+          ?
+          `
+          <br><br>
+
+          <button onclick="editar(${i})">
+            Editar
+          </button>
+
+          <button onclick="remover(${i})">
+            🗑
+          </button>
+          `
+          :
+          ''
+        }
+
+      </div>
+    `).join("")}
+
+    ${
+      modoEditor
+      ?
+      `<button onclick="add()">+ Sala</button>`
+      :
+      ''
+    }
+  `;
+}
+
+function add(){
+
+  pegarSalasDia().push({
+    nome:"Nova Sala",
+    evento:"",
+    horario:""
+  });
+
+  salvar();
+  render();
+}
+
+function remover(i){
+
+  if(!confirm("Remover sala?")) return;
+
+  pegarSalasDia().splice(i,1);
+
+  salvar();
+  render();
+}
+
+function editar(i){
+
+  const salas = pegarSalasDia();
+
+  const nome = prompt(
+    "Nome da sala:",
+    salas[i].nome
+  );
+
+  if(nome===null)return;
+
+  const evento = prompt(
+    "Evento:",
+    salas[i].evento
+  );
+
+  if(evento===null)return;
+
+  const horario = prompt(
+    "Horário:",
+    salas[i].horario
+  );
+
+  if(horario===null)return;
+
+  salas[i].nome = nome;
+  salas[i].evento = evento;
+  salas[i].horario = horario;
+
+  salvar();
+  render();
+}
+
+render();
+
+</script>
